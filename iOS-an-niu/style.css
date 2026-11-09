@@ -1,0 +1,261 @@
+/* ============================================ */
+/* iOS 胶囊分段按钮 - 全局样式 */
+/* ============================================ */
+
+/* 主题色变量 */
+:root {
+  --bg: #f5f7f8;
+  --text: #1b2429;
+  --muted: #748087;
+  --accent-dark: #ffffff;
+  --accent-soft: #ffffff;
+}
+
+/* 统一盒模型 */
+* {
+  box-sizing: border-box;
+}
+
+/* 页面基础样式：壁纸铺满整屏并固定，颜色作为加载前的兜底 */
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg) url("../../ff11.png") center / cover no-repeat fixed;
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+  font-size: 14px;
+  user-select: none;
+}
+
+/* 演示内容容器 */
+.demo {
+  width: min(360px, calc(100vw - 40px));
+  text-align: center;
+}
+
+/* 标题 */
+.demo h1 {
+  margin: 0 0 8px;
+  background-color: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(5px);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 18px;
+}
+
+/* 提示文案 */
+.hint {
+  margin: 0 0 28px;
+  background-color: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(5px);
+  padding: 4px 8px;
+  border-radius: 4px;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 11px;
+}
+
+/* 结果文字 */
+.result {
+  margin-top: 24px;
+  background-color: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(5px);
+  padding: 4px 8px;
+  border-radius: 4px;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 12px;
+}
+
+/* 胶囊外壳：只负责布局、拖动位移和圆角，底色与磨砂交给下面的滑轨层 */
+.capsule {
+  position: relative;
+  display: flex;
+  gap: 3px;
+  padding: 3px;
+  border-radius: 999px;
+  /* 拖动跟随位移写在 transform 上，不改变布局 */
+  transform: translateX(var(--capsule-shift, 0px));
+  transition: transform 0.5s ease;
+  /* 提前提升为独立合成层，位移时避免重新绘制引起的边缘抖动 */
+  will-change: transform;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  /* 只接管横向拖动，竖向仍交给浏览器滚动 */
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  /* 容器外圈（内边距与分段间隙）也要手掌，避免露出默认的圆形指针 */
+  cursor: pointer;
+}
+
+/* 滑轨层：半透明底 + 高斯模糊，和指示器做兄弟层叠在同一位置
+   单独成层后，滑轨的 backdrop-filter 不会波及指示器的折射 */
+.capsule-rail {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.6);
+  /* 滑轨的毛玻璃：模糊透过滑轨的背景 */
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  box-shadow: 0 0 10px 3px rgba(27, 47, 56, 0.1),
+    inset 0 0 5px 2px rgba(255, 255, 255, 0.6);
+  /* 不接收指针事件，拖动和点击都交给上层按钮 */
+  pointer-events: none;
+}
+
+/* 拖动期间关掉过渡，轨道跟随位移必须实时跟手 */
+.capsule.dragging {
+  transition: none;
+}
+
+/* 白色指示器：液态玻璃外观（斜向高光 + 内高光边缘 + 弹性位移） */
+.capsule::before {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  bottom: 3px;
+  /* 指示器占一个分段：4 个分段之间的 3 个 3px 间隙要一起扣掉 */
+  width: calc((100% - 15px) / 4);
+  border-radius: 999px;
+  /* background-color: rgba(255, 255, 255, 0.4); */
+  background-color: rgba(0, 0, 0, 0.1);
+  /* 玻璃光泽：顶部亮、中段透、底部微微回亮 */
+  /* background-image: linear-gradient(
+    165deg,
+    rgba(255, 255, 255, 0.9) 0%,
+    rgba(255, 255, 255, 0.25) 38%,
+    rgba(255, 255, 255, 0) 52%,
+    rgba(255, 255, 255, 0.2) 100%
+  ); */
+  /* 外层投影 + 顶部内高光 + 底部内阴影，做出玻璃厚度感 */
+  /* box-shadow:
+    0 2px 8px rgba(27, 47, 56, 0.2),
+    inset 0 1px 1px rgba(255, 255, 255, 0.95),
+    inset 0 -1px 2px rgba(70, 90, 100, 0.12); */
+    box-shadow: inset 0 0 5px 0px rgba(255, 255, 255, 0),0 0 5px 0px rgba(27, 47, 56, 0);
+  /* 位移、拉伸变形、按压缩放都由 JS 写入 --indicator-transform 驱动 */
+  transform: var(--indicator-transform, none);
+  /* 默认压在文字层下面：静止时黑色底不会盖住文字，保证可读性 */
+  z-index: 1;
+  /* 液态玻璃折射：滤镜套在指示器上，只弯折透过指示器的背景，轮廓仍是干净胶囊 */
+  backdrop-filter: url(#indicator-lens);
+  -webkit-backdrop-filter: url(#indicator-lens);
+  /* 弹簧动画在 JS 里逐帧推进，这里只保留底色过渡 */
+  transition: background-color 0.24s ease, box-shadow 0.24s ease;
+  pointer-events: none;
+  backface-visibility: hidden;
+  will-change: transform;
+}
+
+/* 按压时指示器底色加深；位移和变形由 JS 实时计算 */
+.capsule:has(.capsule-item.pressing)::before {
+  background-color: rgba(255, 255, 255, 0.1);
+  box-shadow: inset 0 0 5px 3px rgba(255, 255, 255, 0.6),
+    0 0 5px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* 指示器被触发（按住、拖动、点击快速切换、回弹）时自动升到文字层上面：
+   玻璃与放大轮廓可以压住文字，静止后立刻回落到文字层下面 */
+.capsule:has(.capsule-item.pressing)::before,
+.capsule.dragging::before,
+.capsule.is-moving::before {
+  z-index: 3;
+}
+
+/* 分段按钮：透明底，主标题与副标题纵向排列 */
+.capsule-item {
+  position: relative;
+  /* 文字层在指示器之上：静止时黑底压不到文字 */
+  z-index: 2;
+  flex: 1;
+  min-width: 0;
+  padding: 7px 8px;
+  /* 默认透明：深色底交给指示器，文字层不再叠一层黑 */
+  background-color: transparent;
+  border: 0;
+  border-radius: 999px;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  transition: color 0.3s ease, background 0.3s ease;
+  backface-visibility: hidden;
+  /* -webkit-backface-visibility: hidden;   */
+}
+
+/* 按压时只提升层级，文字不放大（放大反馈交给白色指示器） */
+.capsule-item.pressing {
+  z-index: 2;
+}
+
+/* 主标题文字 */
+.capsule-item strong {
+  font-size: 12px;
+}
+
+/* 副标题文字 */
+.capsule-item span {
+  color: var(--muted);
+  font-size: 10px;
+  transition: color 0.2s;
+}
+
+/* 鼠标悬停（未选中）时的浅白反馈 */
+.capsule-item:hover:not(.active) {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* 指示器被触发（按住、拖动）或正在移动（点击快速切换、回弹）时，
+   由上面那条 z-index 规则把指示器抬到文字层上面，这里不再改文字底色 */
+.capsule:has(.capsule-item.pressing) .capsule-item,
+.capsule.dragging .capsule-item,
+.capsule.is-moving .capsule-item {
+  background-color: transparent;
+}
+
+/* 选中分段的主标题颜色 */
+.capsule-item.active {
+  color: var(--accent-dark);
+  text-shadow: 0 0 4px rgba(0, 0, 0, 0.2);
+}
+
+/* 选中分段的副标题颜色 */
+.capsule-item.active span {
+  color: var(--accent-soft);
+}
+
+/* ============================================ */
+/* 长按拖动期间保持手掌光标 */
+/* 指针拖出胶囊也强制手掌，不会变成箭头或圆形 */
+/* ============================================ */
+body.cursor-hand,
+body.cursor-hand * {
+  cursor: pointer !important;
+}
+
+/* 键盘聚焦时的可视提示 */
+.capsule-item:focus-visible {
+  outline: 3px solid rgba(22, 168, 199, 0.3);
+  outline-offset: 3px;
+}
+
+/* ============================================ */
+/* SVG 折射滤镜的容器 */
+/* 零尺寸不参与布局，只负责给指示器提供滤镜定义 */
+/* ============================================ */
+.warp-defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  pointer-events: none;
+}

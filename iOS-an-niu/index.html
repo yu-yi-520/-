@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>胶囊按钮 实验版</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="demo">
+    <h1>胶囊按钮 实验版</h1>
+    <p class="hint">超越前端上限；按住滑块左右拖动，拉出两端外会跟手滑出并变宽，滑轨也跟随移动，松手回弹</p>
+
+    <div class="capsule" id="capsule" role="tablist" aria-label="按钮模板">
+      <!-- 滑轨单独一层：和指示器做兄弟层叠在同一位置，滑轨才能单独上高斯模糊 -->
+      <div class="capsule-rail" aria-hidden="true"></div>
+      <button class="capsule-item active" data-segment="light" role="tab" aria-selected="true" type="button"><strong>1</strong><span>YLSJ</span></button>
+      <button class="capsule-item" data-segment="balanced" role="tab" aria-selected="false" type="button"><strong>2</strong><span>页面-pro</span></button>
+      <button class="capsule-item" data-segment="strong" role="tab" aria-selected="false" type="button"><strong>3</strong><span>我去-不早说</span></button>
+      <button class="capsule-item" data-segment="extra" role="tab" aria-selected="false" type="button"><strong>4</strong><span>新增</span></button>
+    </div>
+
+    <p class="result" id="result">当前档位：1</p>
+  </main>
+
+  <!-- 液态玻璃折射滤镜：套在指示器上，扭曲透过指示器的背景，不改指示器轮廓 -->
+  <svg class="warp-defs" aria-hidden="true" focusable="false">
+    <filter id="indicator-lens" x="-15%" y="-15%" width="130%" height="130%" color-interpolation-filters="sRGB">
+      <!-- 位移图由 script.js 按指示器实际尺寸生成：沿胶囊轮廓法线的向量场
+           R 通道存横向位移，G 通道存纵向位移，中灰 0.5 表示不位移 -->
+      <feImage id="lens-map" preserveAspectRatio="none" href="" result="map" />
+      <!-- 按位移图弯折背景像素：轮廓内侧的背景被拉向边缘，沿整圈轮廓形成镜片折射 -->
+      <!-- 位移强度 scale 由 script.js 按按压力度实时写入：静止时为 0，按住或拖动才扭曲 -->
+      <feDisplacementMap id="lens-warp" in="SourceGraphic" in2="map" scale="0" xChannelSelector="R" yChannelSelector="G" />
+    </filter>
+  </svg>
+
+  <script src="script.js"></script>
+</body>
+</html>
